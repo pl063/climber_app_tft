@@ -1,0 +1,114 @@
+import digitalio
+import board
+import RPi.GPIO as GPIO
+from setup import Display
+from time import sleep
+
+import busio
+import adafruit_ads1x15.ads1115 as ADS
+from adafruit_ads1x15.analog_in import AnalogIn
+
+from start_screen import start_screen
+from timer import timer_screen
+from stamp_screen import stamp_screen
+
+GPIO.setmode(GPIO.BCM)  
+
+cs_pin = digitalio.DigitalInOut(board.CE0)
+dc_pin = digitalio.DigitalInOut(board.D27)
+reset_pin = digitalio.DigitalInOut(board.D17)
+
+# Initialize adc
+i2c = busio.I2C(board.SCL, board.SDA)
+ads = ADS.ADS1115(i2c)
+# Define the analog input channel
+transistor_channels = [AnalogIn(ads, ADS.P0), AnalogIn(ads, ADS.P1), AnalogIn(ads, ADS.P2), AnalogIn(ads, ADS.P3)]
+
+#channel = AnalogIn(ads, ADS.P0)
+treshhold = 28650
+
+baudrate = 24000000
+border = 20
+fontsize = 21
+pins = [cs_pin, dc_pin, reset_pin]
+
+
+button_pin = 26
+GPIO.setup(button_pin, GPIO.IN)
+
+stamp_arr = []
+time_str = "0:0"
+index_tran = [0]
+
+
+
+disp = Display(pins, baudrate, fontsize, border)
+
+if disp._disp_setting.rotation % 180 == 90:
+    height = disp._disp_setting.height  
+    width = disp._disp_setting.width
+
+
+# Display image
+
+def read_transistors():
+ 
+    current_trace_key = transistor_channels[index_tran[0]]
+    current_value = current_trace_key.value
+
+    print("INDEX ")
+    print(index_tran[0])
+    print(current_value)
+
+    if(current_value < treshhold):
+        index_tran[0] += 1
+
+    return current_value
+ 
+
+def tick():
+   
+    counter_arr= ["0", "0"] 
+    counter_text = ":".join(counter_arr)
+
+    flags = [False]
+    flags_transistors = [False]
+  
+    #tick timer
+    while True:
+        #clean flags, initiate anew
+        
+        flags.clear()
+        flags.append(False)
+
+        tran_value = read_transistors()
+
+        if (flags_transistors[len(flags_transistors) - 1]): 
+              image = stamp_screen(fontsize, stamp_arr,  counter_text)
+        else:
+           image = timer_screen(fontsize, counter_text, flags)
+       
+        disp._disp_setting.image(image)
+        next_counter = int(counter_arr[1]) + 1
+        counter_arr[1] = str(next_counter)
+        counter_text = ":".join(counter_arr)
+
+        if(tran_value < treshhold):
+            flags_transistors.append(True)
+            stamp_arr.append(str(next_counter))
+            
+             
+
+        #print(stamp_arr)
+    
+
+def main():
+    button_state = GPIO.input(button_pin) 
+    disp._disp_setting.image(start_screen(fontsize))
+
+    while True:
+        button_state = GPIO.input(button_pin) 
+        if( button_state == 0 ):
+            tick()
+
+main()
