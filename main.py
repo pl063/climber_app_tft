@@ -106,7 +106,11 @@ def tick():
        
         disp._disp_setting.image(image)
         next_counter = int(counter_arr[1]) + 1
-        counter_arr[1] = str(next_counter)
+        if(next_counter >= 60):
+            counter_arr[0] = str(int(counter_arr[0]) + 1)
+            counter_arr[1] = str(next_counter - 60)
+        else:
+            counter_arr[1] = str(next_counter)
         counter_text = ":".join(counter_arr)
 
         if(is_finished_flags[len(is_finished_flags) - 1] == False):
