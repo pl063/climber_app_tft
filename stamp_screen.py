@@ -24,6 +24,7 @@ def stamp_screen(fontsize, stamp_arr, time_str):
     for stamp in stamp_arr:
         text = "Checkpoint "
         text += str(trace_index) + " -" + " "
+     
         text += str(stamp) + "s"
         draw.text(
             (70, stamp_position_y, 250, 200),

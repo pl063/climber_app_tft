@@ -1,13 +1,14 @@
 import digitalio
 import board
 import RPi.GPIO as GPIO
-from setup import Display
+import os
+import sys
 from time import sleep
-
 import busio
 import adafruit_ads1x15.ads1115 as ADS
 from adafruit_ads1x15.analog_in import AnalogIn
 
+from setup import Display
 from start_screen import start_screen
 from timer import timer_screen
 from stamp_screen import stamp_screen
@@ -22,10 +23,10 @@ reset_pin = digitalio.DigitalInOut(board.D17)
 i2c = busio.I2C(board.SCL, board.SDA)
 ads = ADS.ADS1115(i2c)
 # Define the analog input channel
-transistor_channels = [AnalogIn(ads, ADS.P0), AnalogIn(ads, ADS.P1), AnalogIn(ads, ADS.P2), AnalogIn(ads, ADS.P3)]
+transistor_channels = [AnalogIn(ads, ADS.P0), AnalogIn(ads, ADS.P1), AnalogIn(ads, ADS.P2)]
 
-channel = AnalogIn(ads, ADS.P0)
 treshhold = 28650
+button_flags = [False] #switch button function from start to reset 
 
 baudrate = 24000000
 border = 20
@@ -53,7 +54,6 @@ if disp._disp_setting.rotation % 180 == 90:
     width = disp._disp_setting.width
 
 
-# Display image
 
 def read_transistors():
     result = 0
@@ -63,9 +63,10 @@ def read_transistors():
         current_value = current_trace_key.value
         result = current_value
 
-        print("INDEX ")
-        print(index_tran[0])
-        print(current_value)
+        print("INDEX " + str(index_tran[0]))
+        #print(current_trace_key)
+       # print(index_tran[0])
+      #  print(current_value)
 
 
         if(current_value < treshhold):
@@ -111,9 +112,19 @@ def tick():
         if(is_finished_flags[len(is_finished_flags) - 1] == False):
             if(tran_value < treshhold):
                 flags_transistors.append(True)
-                stamp_arr.append(str(next_counter))
+                str_time = ""
+                if(next_counter < 10):
+                    str_time += "0" + str(next_counter)
+                else:
+                    str_time += str(next_counter)
+                stamp_arr.append(str_time)
                 
              
+        button_state = GPIO.input(button_pin) 
+
+        if(button_state == 0): #restart the script
+            os.execv(sys.executable, ['python'] + [sys.argv[0]]) 
+
         sleep(1)
         #print(stamp_arr)
     
@@ -121,10 +132,11 @@ def tick():
 def main():
     button_state = GPIO.input(button_pin) 
     disp._disp_setting.image(start_screen(fontsize))
+    button_flags.append(True)
 
     while True:
-      button_state = GPIO.input(button_pin) 
-      if( button_state == 0 ):
-        tick()
+            button_state = GPIO.input(button_pin) 
+            if( button_state == 0 ):
+                tick()
 
 main()
