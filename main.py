@@ -34,11 +34,14 @@ fontsize = 21
 pins = [cs_pin, dc_pin, reset_pin]
 
 
-button_pin = 26
+button_channel = AnalogIn(ads, ADS.P3)
+button_vcc = 19
 adc_vdd = 21
 GPIO.setup(adc_vdd, GPIO.OUT)
+GPIO.setup(button_vcc, GPIO.OUT)
+GPIO.output(button_vcc, GPIO.HIGH)
 GPIO.output(adc_vdd, GPIO.HIGH)
-GPIO.setup(button_pin, GPIO.IN)
+
 
 stamp_arr = []
 time_str = "0:0"
@@ -123,10 +126,10 @@ def tick():
                     str_time += str(next_counter)
                 stamp_arr.append(str_time)
                 
-             
-        button_state = GPIO.input(button_pin) 
-
-        if(button_state == 0): #restart the script
+        sleep(0.3) #debounce     
+        button_state = button_channel.value
+       # print(button_state)
+        if( button_state >= 26350): #restart the script
             os.execv(sys.executable, ['python'] + [sys.argv[0]]) 
 
         sleep(1)
@@ -134,13 +137,17 @@ def tick():
     
 
 def main():
-    button_state = GPIO.input(button_pin) 
+    sleep(0.3) #debounce    
+    button_state = button_channel.value 
+    #print(button_state)
     disp._disp_setting.image(start_screen(fontsize))
     button_flags.append(True)
 
     while True:
-            button_state = GPIO.input(button_pin) 
-            if( button_state == 0 ):
+            sleep(0.4) #debounce    
+            button_state = button_channel.value
+           # print(button_state)
+            if( button_state >= 26350 ):
                 tick()
 
 main()
