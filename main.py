@@ -16,8 +16,8 @@ from stamp_screen import stamp_screen
 GPIO.setmode(GPIO.BCM)  
 
 cs_pin = digitalio.DigitalInOut(board.CE0)
-dc_pin = digitalio.DigitalInOut(board.D27)
-reset_pin = digitalio.DigitalInOut(board.D17)
+dc_pin = digitalio.DigitalInOut(board.D27) #GPIO 27
+reset_pin = digitalio.DigitalInOut(board.D17) #GPIO 17
 
 # Initialize adc
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -25,17 +25,18 @@ ads = ADS.ADS1115(i2c)
 # Define the analog input channel
 transistor_channels = [AnalogIn(ads, ADS.P0), AnalogIn(ads, ADS.P1), AnalogIn(ads, ADS.P2)]
 
-treshhold = 28650
+treshhold = 20000 #treshhold value for phototransistors
 button_flags = [False] #switch button function from start to reset 
 
+#display settings
 baudrate = 24000000
 border = 20
 fontsize = 21
-pins = [cs_pin, dc_pin, reset_pin]
+pins = [cs_pin, dc_pin, reset_pin] 
 
 
 button_channel = AnalogIn(ads, ADS.P3)
-button_vcc = 19
+button_vcc = 19 #use gpio for 3.3v
 adc_vdd = 21
 GPIO.setup(adc_vdd, GPIO.OUT)
 GPIO.setup(button_vcc, GPIO.OUT)
@@ -61,19 +62,21 @@ if disp._disp_setting.rotation % 180 == 90:
 def read_transistors():
     result = 0
     
-    try:
+    try:   
         current_trace_key = transistor_channels[index_tran[0]]
         current_value = current_trace_key.value
         result = current_value
 
-        print("INDEX " + str(index_tran[0]))
+
+        #print("INDEX " + str(index_tran[0]))
+        print(result)
         #print(current_trace_key)
        # print(index_tran[0])
       #  print(current_value)
 
 
         if(current_value < treshhold):
-            index_tran[0] += 1
+             index_tran[0] += 1
 
         
     except :
@@ -102,12 +105,14 @@ def tick():
        
         tran_value = read_transistors()
 
+        #change display images according to transistors' values
         if (flags_transistors[len(flags_transistors) - 1]): 
               image = stamp_screen(fontsize, stamp_arr,  counter_text)
         else:
            image = timer_screen(fontsize, counter_text, flags)
        
         disp._disp_setting.image(image)
+        #time counter``
         next_counter = int(counter_arr[1]) + 1
         if(next_counter >= 60):
             counter_arr[0] = str(int(counter_arr[0]) + 1)
@@ -121,12 +126,12 @@ def tick():
                 flags_transistors.append(True)
                 str_time = ""
                 if(next_counter < 10):
-                    str_time += "0" + str(next_counter)
+                     str_time += "0" + str(next_counter)
                 else:
                     str_time += str(next_counter)
                 stamp_arr.append(str_time)
-                
-        sleep(0.3) #debounce     
+            
+        #sleep(0.3) #debounce     
         button_state = button_channel.value
        # print(button_state)
         if( button_state >= 26350): #restart the script
@@ -137,14 +142,14 @@ def tick():
     
 
 def main():
-    sleep(0.3) #debounce    
+    sleep(0.1) #debounce    
     button_state = button_channel.value 
     #print(button_state)
     disp._disp_setting.image(start_screen(fontsize))
     button_flags.append(True)
 
     while True:
-            sleep(0.4) #debounce    
+            sleep(0.1) #debounce    
             button_state = button_channel.value
            # print(button_state)
             if( button_state >= 26350 ):

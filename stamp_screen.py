@@ -13,7 +13,7 @@ def stamp_screen(fontsize, stamp_arr, time_str):
     #stamps:
     draw.text(
         (115, 25, 250, 200),
-        "Stamps:",
+        "LET'S GO ! ! !",
         font=font,
         fill=(0, 0, 0),
     )
